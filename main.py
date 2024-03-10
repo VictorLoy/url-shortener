@@ -1,10 +1,11 @@
+from fastapi.responses import RedirectResponse
 import validators
 from database import SessionLocal
 from error import raiseError
 import models
 import schemas
 import secrets
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, Request
 from sqlalchemy.orm import Session
 from database import engine
 
@@ -41,6 +42,22 @@ def create_url(url: schemas.BaseURL, db: Session = Depends(get_db)):
     db_url.admin_url = secret_key
 
     return db_url
+
+@app.get("/{url_key}")
+def forward_to_original_url(
+        url_key: str,
+        request: Request,
+        db: Session = Depends(get_db)
+    ):
+    db_url = (
+        db.query(models.URL)
+        .filter(models.URL.key == url_key, models.URL.is_active)
+        .first()
+    )
+    if db_url:
+        return RedirectResponse(db_url.target_url)
+    else:
+        raiseError(statusCode=404,message=f" URL {request.url} not found")
 
 
 
