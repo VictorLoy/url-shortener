@@ -54,7 +54,7 @@ def forward_to_original_url(
     else:
         raiseError(statusCode=404,message=f" URL {request.url} not found")
 
-@app.post("/admin/{url_key}", response_model=schemas.AdminInfo)
+@app.get("/admin/{url_key}", response_model=schemas.AdminInfo)
 def forward_to_original_url(
         url_key: str,
         request: Request,
