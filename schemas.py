@@ -5,11 +5,19 @@ class BaseURL(BaseModel):
 
 class URL(BaseURL):
     active: bool
-    visits: int
 
     class Config:
         orm_mode = True
 
 class URLInfo(URL):
     url: str
-    admin_url: str
+    expiry: float
+
+class AdminInfo(URL):
+    url: str
+    expiry: float
+    visits: int
+    created: float
+    expiry: float
+
+

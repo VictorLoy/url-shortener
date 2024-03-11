@@ -1,10 +1,12 @@
+import time
 from fastapi.responses import RedirectResponse
 import validators
+from config import get_settings
+import crud
 from database import SessionLocal
 from error import raiseError
 import models
 import schemas
-import secrets
 from fastapi import Depends, FastAPI, Request
 from sqlalchemy.orm import Session
 from database import engine
@@ -29,17 +31,9 @@ def create_url(url: schemas.BaseURL, db: Session = Depends(get_db)):
     if not validators.url(url.original_url):
         raiseError(statusCode=404, message="Invalid URL")
     
-    chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    key = "".join(secrets.choice(chars) for _ in range(5))
-    secret_key = "".join(secrets.choice(chars) for _ in range(8))
-    db_url = models.URL(
-        original_url=url.original_url, key=key, secret_key=secret_key
-    )
-    db.add(db_url)
-    db.commit()
-    db.refresh(db_url)
-    db_url.url = key
-    db_url.admin_url = secret_key
+    db_url = crud.create_db_url(db=db, url=url)
+    db_url.url = db_url.key
+
 
     return db_url
 
@@ -49,13 +43,27 @@ def forward_to_original_url(
         request: Request,
         db: Session = Depends(get_db)
     ):
-    db_url = (
-        db.query(models.URL)
-        .filter(models.URL.key == url_key, models.URL.is_active)
-        .first()
-    )
+    db_url = crud.get_if_key_exists(db, url_key)
     if db_url:
-        return RedirectResponse(db_url.target_url)
+        print(int(time.time()), db_url.expiry , int(time.time()) > db_url.expiry)
+        if db_url.active and int(time.time()) < db_url.expiry:
+            crud.update_db_clicks(db, db_url)
+            return RedirectResponse(db_url.original_url)
+        else:
+            raiseError(statusCode=410 , message=f" URL {request.url} not active or expired")
+    else:
+        raiseError(statusCode=404,message=f" URL {request.url} not found")
+
+@app.post("/admin/{url_key}", response_model=schemas.AdminInfo)
+def forward_to_original_url(
+        url_key: str,
+        request: Request,
+        db: Session = Depends(get_db)
+    ):
+    db_url = crud.get_if_key_exists(db, url_key)
+    if db_url:
+        db_url.url = db_url.key
+        return db_url
     else:
         raiseError(statusCode=404,message=f" URL {request.url} not found")
 
