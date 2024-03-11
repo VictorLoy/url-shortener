@@ -10,9 +10,9 @@ This is a simple URL shortener application built using Python, FastAPI, and SQLi
 - **Endpoint:** `/`
 - **Description:** Create a shortened URL.
 - **Request Body:**
-  - `url` (string): The original long URL to be shortened.
+  - `original_url` (string): The original long URL to be shortened.
 - **Response:**
-  - `shortened_url` (string): The shortened URL.
+  - `url` (string): The shortened URL.
 
 ### Redirect to Original URL
 
