@@ -96,7 +96,7 @@ This project uses SQLite as its database to store URLs and their corresponding s
 
 ## Contributors
 
-- [Your Name](https://github.com/VictorLoy)
+- [Victor](https://github.com/VictorLoy)
 
 ## License
 
